@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use Illuminate\Support\Facades\Http;
+
 class CryptoService
 {
     protected $apiKey;
@@ -38,10 +39,33 @@ class CryptoService
             ];
 
         } catch (\Exception $e) {
+            report($e);
             return [
                 'status' => 'error',
                 'message' => $e->getMessage()
             ];
         }
     }
+
+    public function getLatestPrice(string $id): ?float
+    {
+        try {
+            $response = Http::withHeaders([
+                'x-cg-demo-api-key' => $this->apiKey
+            ])->get($this->baseUrl . 'simple/price', [
+                'ids' => strtolower($id),
+                'vs_currencies' => 'usd',
+            ]);
+
+            if ($response->successful() && isset($response->json()[strtolower($id)]['usd'])) {
+                return (float) $response->json()[strtolower($id)]['usd'];
+            }
+            return null;
+
+        } catch (\Exception $e) {
+            report($e);
+            return null;
+        }
+    }
 }
+

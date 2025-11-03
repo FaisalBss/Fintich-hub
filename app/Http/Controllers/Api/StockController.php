@@ -15,9 +15,26 @@ class StockController extends Controller
         $this->stockService = $stockService;
     }
 
+
     public function show(string $symbol)
     {
         $data = $this->stockService->getStockQuote($symbol);
+
+        return response()->json($data);
+    }
+
+
+    public function topGainers()
+    {
+        $data = $this->stockService->getTopGainers();
+        return response()->json($data);
+    }
+
+
+    public function ipoCalendar()
+    {
+        $data = $this->stockService->getIpoCalendar();
         return response()->json($data);
     }
 }
+

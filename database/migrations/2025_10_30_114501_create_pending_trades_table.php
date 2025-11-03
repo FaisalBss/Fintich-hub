@@ -11,12 +11,13 @@ return new class extends Migration
         Schema::create('pending_trades', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
-            $table->string('stock_symbol');
+            $table->string('symbol');
+            $table->string('type');
             $table->decimal('quantity', 10, 4);
-            $table->decimal('price_per_share', 10, 2);
+            $table->decimal('price_per_unit', 10, 2);
             $table->decimal('total_cost', 10, 2);
             $table->string('otp');
-            $table->timestamp('otp_expires_at');
+            $table->timestamp('expires_at');
             $table->timestamps();
         });
     }

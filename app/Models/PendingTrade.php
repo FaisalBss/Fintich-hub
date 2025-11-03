@@ -11,15 +11,18 @@ class PendingTrade extends Model
 
     protected $fillable = [
         'user_id',
-        'stock_symbol',
+        'symbol',
+        'type',
         'quantity',
-        'price_per_share',
+        'price_per_unit',
         'total_cost',
         'otp',
-        'otp_expires_at'
+        'expires_at',
     ];
 
+
     protected $casts = [
-        'otp_expires_at' => 'datetime',
+        'expires_at' => 'datetime',
     ];
 }
+

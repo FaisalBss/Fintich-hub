@@ -11,13 +11,11 @@ class WalletService
 
     public function deposit(User $user, float $amount): array
     {
+        DB::beginTransaction();
         try {
-            DB::beginTransaction();
-
             $wallet = $user->wallet()->firstOrCreate(['user_id' => $user->id]);
 
             $wallet->increment('balance', $amount);
-            $wallet->save();
 
             DB::commit();
 
@@ -27,15 +25,27 @@ class WalletService
                 'new_balance' => $wallet->balance,
                 'code' => 200
             ];
-
         } catch (\Exception $e) {
             DB::rollBack();
             report($e);
             return [
                 'status' => 'error',
-                'message' => 'Deposit failed. Please try again.',
+                'message' => 'An error occurred during deposit.',
                 'code' => 500
             ];
         }
     }
+
+
+    public function hasSufficientBalance(User $user, float $amountToCheck): bool
+    {
+        $wallet = $user->wallet;
+
+        if (!$wallet) {
+            return false;
+        }
+
+        return $wallet->balance >= $amountToCheck;
+    }
 }
+

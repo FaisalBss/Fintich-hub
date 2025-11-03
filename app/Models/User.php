@@ -2,6 +2,10 @@
 
 namespace App\Models;
 
+use App\Models\Portfolio;
+use App\Models\Wallet;
+use App\Models\PendingTrade;
+
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -51,6 +55,7 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'otp_expires_at' => 'datetime',
         ];
     }
 
@@ -62,5 +67,10 @@ class User extends Authenticatable
     public function portfolio(): HasMany
     {
         return $this->hasMany(Portfolio::class);
+    }
+
+    public function pendingTrade()
+    {
+        return $this->hasOne(PendingTrade::class);
     }
 }
