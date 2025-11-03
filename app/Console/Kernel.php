@@ -10,10 +10,6 @@ class Kernel extends ConsoleKernel
 
     protected function schedule(Schedule $schedule): void
     {
-        // $schedule->command('inspire')->hourly();
-
-        // (هذا هو السطر الذي أضفناه)
-        // قم بتشغيل أمر تنظيف الطلبات "يومياً"
         $schedule->command('trades:prune-expired')->daily();
     }
 
