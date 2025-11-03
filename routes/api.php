@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\CurrencyController;
 use App\Http\Controllers\Api\NewsController;
 use App\Http\Controllers\Api\WalletController;
 use App\Http\Controllers\Api\TradeController;
+use App\Http\Controllers\Api\PortfolioController;
 
 
 Route::post('/verify-otp', [AuthController::class, 'verifyOtp']);
@@ -32,6 +33,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::post('/trade/buy', [TradeController::class, 'initiateBuy']);
     Route::post('/trade/confirm', [TradeController::class, 'confirmBuy']);
+
+    Route::get('/portfolio', [PortfolioController::class, 'index']);
 
     Route::post('/logout', [AuthController::class, 'logout']);
 

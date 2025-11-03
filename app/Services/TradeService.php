@@ -7,7 +7,7 @@ use App\Models\PendingTrade;
 use App\Services\StockService;
 use App\Services\CryptoService;
 use App\Services\WalletService;
-use App\Models\Portfolio;
+use App\Services\PortfolioService;
 use App\Mail\SendOtpMail;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\DB;
@@ -17,15 +17,18 @@ class TradeService
     protected $stockService;
     protected $cryptoService;
     protected $walletService;
+    protected $portfolioService;
 
     public function __construct(
         StockService $stockService,
         CryptoService $cryptoService,
-        WalletService $walletService
+        WalletService $walletService,
+        PortfolioService $portfolioService
     ) {
         $this->stockService = $stockService;
         $this->cryptoService = $cryptoService;
         $this->walletService = $walletService;
+        $this->portfolioService = $portfolioService;
     }
 
     public function initiateBuy(User $user, string $symbol, float $quantity, string $type): array
@@ -77,47 +80,31 @@ class TradeService
         }
     }
 
-
     public function confirmBuy(User $user, string $otp): array
     {
-        $trade = $user->pendingTrade()->first();
+        $trade = $user->pendingTrade()->where('otp', $otp)->first();
 
         if (!$trade) {
-            return ['status' => 'error', 'message' => 'No pending trade found.', 'code' => 404];
-        }
-
-        if ($trade->otp !== $otp) {
             return ['status' => 'error', 'message' => 'Invalid OTP.', 'code' => 401];
         }
 
         if (now()->gt($trade->expires_at)) {
             $trade->delete();
-            return ['status' => 'error', 'message' => 'OTP expired. Please initiate purchase again.', 'code' => 400];
+            return ['status' => 'error', 'message' => 'OTP has expired. Please try again.', 'code' => 400];
         }
 
         DB::beginTransaction();
+
         try {
-            $wallet = $user->wallet;
-            if ($wallet->balance < $trade->total_cost) {
-                DB::rollBack();
-                return ['status' => 'error', 'message' => 'Insufficient funds (check failed again).', 'code' => 400];
-            }
-            $wallet->decrement('balance', $trade->total_cost);
+            $this->walletService->withdraw($user, $trade->total_cost);
 
-            $portfolioItem = $user->portfolio()
-                ->firstOrCreate(
-                    ['symbol' => $trade->symbol, 'type' => $trade->type],
-                    ['quantity' => 0, 'average_price' => 0]
-                );
-
-            $newQuantity = $portfolioItem->quantity + $trade->quantity;
-            $newTotalValue = ($portfolioItem->average_price * $portfolioItem->quantity) + $trade->total_cost;
-            $newAveragePrice = $newTotalValue / $newQuantity;
-
-            $portfolioItem->update([
-                'quantity' => $newQuantity,
-                'average_price' => $newAveragePrice
-            ]);
+            $portfolioItem = $this->portfolioService->addAsset(
+                $user->id,
+                $trade->symbol,
+                $trade->type,
+                $trade->quantity,
+                $trade->price_per_unit
+            );
 
             $trade->delete();
 
@@ -126,7 +113,7 @@ class TradeService
             return [
                 'status' => 'success',
                 'message' => 'Purchase confirmed successfully!',
-                'new_balance' => $wallet->balance,
+                'new_balance' => $user->wallet->fresh()->balance,
                 'portfolio_item' => $portfolioItem,
                 'code' => 200
             ];
@@ -134,7 +121,11 @@ class TradeService
         } catch (\Exception $e) {
             DB::rollBack();
             report($e);
-            return ['status' => 'error', 'message' => 'An error occurred during final transaction.', 'code' => 500];
+            return [
+                'status' => 'error',
+                'message' => 'An error occurred during final transaction: ' . $e->getMessage(),
+                'code' => 500
+            ];
         }
     }
 }

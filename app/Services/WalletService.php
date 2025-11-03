@@ -47,5 +47,22 @@ class WalletService
 
         return $wallet->balance >= $amountToCheck;
     }
+
+    public function withdraw(User $user, float $amount): Wallet
+    {
+        $wallet = $user->wallet;
+
+        DB::transaction(function () use ($wallet, $amount) {
+            $wallet = $wallet->lockForUpdate()->first();
+
+            if ($wallet->balance < $amount) {
+                throw new \Exception('Insufficient funds during final transaction.');
+            }
+
+            $wallet->decrement('balance', $amount);
+        });
+
+        return $wallet->fresh();
+    }
 }
 

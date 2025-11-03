@@ -143,4 +143,16 @@ class AuthService
             'code' => 200
         ];
     }
+
+    public function logout(): array
+    {
+        $user = Auth::user();
+        $user->tokens()->delete();
+
+        return [
+            'status' => 'success',
+            'message' => 'Logged out successfully.',
+            'code' => 200
+        ];
+    }
 }

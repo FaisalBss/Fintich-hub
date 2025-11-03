@@ -11,11 +11,13 @@ return new class extends Migration
         Schema::create('portfolios', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
-            $table->string('stock_symbol');
+            $table->string('symbol');
+            $table->string('type');
             $table->decimal('quantity', 10, 4)->default(0.0000);
+            $table->decimal('average_price', 15, 4)->default(0.0000);
             $table->timestamps();
 
-            $table->unique(['user_id', 'stock_symbol']);
+            $table->unique(['user_id', 'symbol', 'type']);
         });
     }
 
